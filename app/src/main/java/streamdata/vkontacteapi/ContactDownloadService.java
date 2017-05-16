@@ -4,7 +4,6 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Handler;
 import android.provider.ContactsContract;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
@@ -17,23 +16,21 @@ import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.content.ContentProviderOperation;
-import android.content.ContentProviderResult;
-import android.content.ContentValues;
-import android.content.Intent;
+
 
 public class ContactDownloadService extends IntentService {
-    private VKRequest myRequest;
+
     public ContactDownloadService() {
         super(ContactDownloadService.class.getName());
     }
@@ -42,19 +39,11 @@ public class ContactDownloadService extends IntentService {
     protected void onHandleIntent(Intent workIntent) {
         Log.i("ContactDownloadService", "Service started");
 
-        // Gets data from the incoming Intent
-        String dataString = workIntent.getDataString();
-
         VKRequest request = VKApi.friends().get(VKParameters.from(VKApiConst.FIELDS,
                 "id,first_name,last_name,contacts,photo_50"));
-        myRequest = request;
+
         request.unregisterObject();
-//        request.executeWithListener(mRequestListener);
         request.executeSyncWithListener(mRequestListener);
-
-
-//        Log.i("ContactDownloadService", request.toString());
-
 
         Log.i("ContactDownloadService", "Service stopping");
         this.stopSelf();
@@ -67,54 +56,26 @@ public class ContactDownloadService extends IntentService {
             Intent broadcastIntent = new Intent();
             broadcastIntent.setAction(getString(R.string.ACTION_NAME));
             sendBroadcast(broadcastIntent);
-//            response.json.get()
-            try {
-//                Log.i("ContactDownloadService", response.json.get("response").toString());
-//                Log.i("ContactDownloadService", response.json.getJSONArray("response").toString());
-//                JSONObject obj = new JSONObject();
-//                Log.i("ContactDownloadService", response.json.toString());
-                JSONObject o = new JSONObject(response.json.get("response").toString());
-//                Log.i("ContactDownloadService", o.);
-                JSONArray rawData = o.getJSONArray("items");
 
-                Log.i("ContactDownloadService", "here");
+            try {
+//                Load and add contacts to phone book
+                Log.i("ContactDownloadService", response.json.toString());
+                JSONObject jsonObject = new JSONObject(response.json.get("response").toString());
+                JSONArray rawData = jsonObject.getJSONArray("items");
+
+                int progressBarStep = (int)(rawData.length() / 10.0);
                 for(int n = 0; n < rawData.length(); n++) {
 
-                    sendBroadcast(broadcastIntent);
-                    String first_name = rawData.getJSONObject(n).getString("first_name");
-                    String last_name = rawData.getJSONObject(n).getString("last_name");
-                    String mobile_phone = rawData.getJSONObject(n).optString("mobile_phone");
-                    String crop_photo = rawData.getJSONObject(n).optString("photo_50");
+                    if (n % progressBarStep == 0) {
+                        sendBroadcast(broadcastIntent); }
 
-
-
-                    if (n == 3) {
-                        addContact(rawData.getJSONObject(n));
-                    } else {
-                        continue;
-                    }
-
-                    Log.i("ContactDownloadService", new Integer(n).toString());
-                    if (first_name != null) {
-                        Log.i("ContactDownloadService", first_name);}
-                    if (last_name != null) {
-                        Log.i("ContactDownloadService", last_name); }
-                    if (mobile_phone != null) {
-                        Log.i("ContactDownloadService", mobile_phone); }
-                    if (crop_photo != null) {
-                        Log.i("ContactDownloadService", crop_photo); }
-
-//                    Log.i("ContactDownloadService", crop_photo);
+                    addContact(rawData.getJSONObject(n));
                 }
 
-//                Log.i("ContactDownloadService", response.json.get("response").toString());
-            } catch (Exception e){
-                Log.i("ContactDownloadService", "Exception");
-                Log.i("ContactDownloadService", e.getMessage());
+                sendBroadcast(broadcastIntent);
+            } catch (JSONException e){
+                Log.e("ContactDownloadService", e.getMessage());
             }
-
-//            Log.i("ContactDownloadService", response.json.toString());
-//            setResponseText(response.json.toString());
         }
 
         @Override
@@ -157,7 +118,7 @@ public class ContactDownloadService extends IntentService {
             bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
             byte[] photoByteArray = stream.toByteArray();
 
-            ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
+            ArrayList<ContentProviderOperation> ops = new ArrayList<>();
             int rawContactInsertIndex = ops.size();
 
             ops.add(ContentProviderOperation.newInsert(RawContacts.CONTENT_URI)
@@ -179,15 +140,11 @@ public class ContactDownloadService extends IntentService {
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoByteArray)
                     .build());
-            try {
-                ContentProviderResult[] res = getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
-            } catch (Exception e){
-                Log.i("ContactDownloadService", e.getMessage());
-            }
 
-
-        } catch (Exception e) {
-            Log.i("ContactDownloadService", "addContact");
+            getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+        } catch (Exception e){
+//             Think that exception is not bad and we can continue.
+            Log.e("ContactDownloadService", e.getMessage());
         }
 
     }

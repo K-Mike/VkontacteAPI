@@ -122,9 +122,6 @@ public class LoginActivity extends FragmentActivity {
         }
     }
 
-//    private void startTestActivity() {
-//        startActivity(new Intent(this, TestActivity.class));
-//    }
 
     private void startProgressActivity() {
         startActivity(new Intent(this, ProgressActivity.class));
