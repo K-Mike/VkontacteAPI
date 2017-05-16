@@ -108,7 +108,7 @@ public class LoginActivity extends FragmentActivity {
             @Override
             public void onResult(VKAccessToken res) {
                 // User passed Authorization
-                startTestActivity();
+//                startTestActivity();
             }
 
             @Override
@@ -122,8 +122,12 @@ public class LoginActivity extends FragmentActivity {
         }
     }
 
-    private void startTestActivity() {
-        startActivity(new Intent(this, TestActivity.class));
+//    private void startTestActivity() {
+//        startActivity(new Intent(this, TestActivity.class));
+//    }
+
+    private void startProgressActivity() {
+        startActivity(new Intent(this, ProgressActivity.class));
     }
 
     public static class LoginFragment extends android.support.v4.app.Fragment {
@@ -156,7 +160,10 @@ public class LoginActivity extends FragmentActivity {
             v.findViewById(R.id.continue_button).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    ((LoginActivity) getActivity()).startTestActivity();
+                    ((LoginActivity) getActivity()).startProgressActivity();
+
+                    Intent serviceIntent = new Intent(getActivity(), ContactDownloadService.class);
+                    getActivity().startService(serviceIntent);
                 }
             });
 
