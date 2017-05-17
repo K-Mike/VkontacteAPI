@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Strings related to login -->
+    <string name="action_sign_in_short">Sign in with VK</string>
+    <string name="action_sign_in_force">Force OAuth</string>
+    <string name="captcha_force">captcha.force</string>
+    <string name="wall_post">wall.post</string>
+    <string name="wall_getById">wall.getById</string>
+    <string name="continue_using_app">Start download Contacts</string>
+    <string name="logout">Logout</string>
+</resources>

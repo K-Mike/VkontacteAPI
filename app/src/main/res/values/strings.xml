@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">VKontacteAPI</string>
+    <string name="ACTION_NAME">"progressbarStep"</string>
+    <integer name="com_vk_sdk_AppId">6031169</integer>
+</resources>
